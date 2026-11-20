@@ -1,0 +1,11 @@
+<%# 削除ボタン。押すとモーダルで確認してから送る %>
+<div data-controller="confirm" data-action="submit->confirm#open" class="inline-block">
+  <%= button_to "削除", rsdt_path(rsdt, back:), method: :delete,
+        class: variant == :icon ? "rounded-md px-2.5 py-1 text-xs text-rose-300 ring-1 ring-rose-400/30 hover:bg-rose-500/10 cursor-pointer"
+                                : "rounded-lg px-4 py-2 text-sm text-rose-300 ring-1 ring-rose-400/40 hover:bg-rose-500/10 cursor-pointer" %>
+  <%= render layout: "shared/confirm_dialog", locals: { title: "この行を削除しますか？", confirm_label: "削除する", danger: true } do %>
+    <p class="rounded-lg bg-slate-950/60 px-3 py-2 font-medium text-white"><%= rsdt.address %></p>
+    <p class="mt-2 font-mono text-xs text-slate-500"><%= rsdt.to_param %></p>
+    <p class="mt-3">削除すると元に戻せません。</p>
+  <% end %>
+</div>

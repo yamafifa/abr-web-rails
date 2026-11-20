@@ -1,0 +1,19 @@
+# DB は abr-batch の MySQL を共用する（テーブル mt_rsdtdsp_rsdt も abr-batch で作ったもの）
+# このアプリではマイグレーションしない。db:create・db:drop・db:migrate などは lib/tasks/db_guard.rake で止めてある
+#
+# development と test は同じ DB を使う。テストは 1 件ごとにトランザクションで取り消すので、中身は変わらない
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # 接続先は DATABASE_URL で変えられる。既定値は abr-batch の compose.yaml の値
+  url: <%= ENV.fetch("DATABASE_URL") { "mysql2://abr:abr@127.0.0.1:3307/abr" } %>
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

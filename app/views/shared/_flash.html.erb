@@ -1,0 +1,8 @@
+<%# 更新・削除のあとのお知らせ。3 秒で消える（flash_controller.js） %>
+<% { notice: "border-emerald-400/30 bg-emerald-500/15 text-emerald-200", alert: "border-rose-400/30 bg-rose-500/15 text-rose-200" }.each do |type, classes| %>
+  <% next unless flash[type] %>
+  <div data-controller="flash" class="fixed right-4 top-20 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm shadow-lg shadow-black/30 backdrop-blur transition-opacity duration-300 <%= classes %>">
+    <span class="size-2 rounded-full <%= type == :notice ? "bg-emerald-400" : "bg-rose-400" %>"></span>
+    <%= flash[type] %>
+  </div>
+<% end %>

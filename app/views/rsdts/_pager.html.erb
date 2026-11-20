@@ -1,0 +1,23 @@
+<% base = "grid h-9 min-w-9 place-items-center rounded-lg px-3 text-sm transition" %>
+<% href = ->(p) { root_path(query.with(page: p).to_params) } %>
+<nav aria-label="ページ送り" class="flex flex-wrap items-center justify-center gap-1">
+  <% if page > 1 %>
+    <%= link_to "‹ 前へ", href.(page - 1), class: "#{base} text-slate-300 hover:bg-white/5" %>
+  <% else %>
+    <span class="<%= base %> text-slate-600">‹ 前へ</span>
+  <% end %>
+  <% pager_items(page, total_pages).each do |p| %>
+    <% if p == :gap %>
+      <span class="px-1 text-slate-600">…</span>
+    <% elsif p == page %>
+      <span aria-current="page" class="<%= base %> bg-cyan-400/15 font-semibold text-cyan-300 ring-1 ring-cyan-400/40"><%= number_with_delimiter(p) %></span>
+    <% else %>
+      <%= link_to number_with_delimiter(p), href.(p), class: "#{base} text-slate-400 hover:bg-white/5 hover:text-white" %>
+    <% end %>
+  <% end %>
+  <% if page < total_pages %>
+    <%= link_to "次へ ›", href.(page + 1), class: "#{base} text-slate-300 hover:bg-white/5" %>
+  <% else %>
+    <span class="<%= base %> text-slate-600">次へ ›</span>
+  <% end %>
+</nav>
