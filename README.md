@@ -3,7 +3,7 @@
 ABR（アドレス・ベース・レジストリ）の住居表示-住居マスター（`mt_rsdtdsp_rsdt`、東京都 1,752,573 件）を検索して、一覧表示・編集・削除する Web アプリです。
 勉強用に、同じものを TypeScript・Ruby on Rails・PHP Laravel で作るうちの Ruby on Rails 版です。
 
-- Ruby 3.4.5 ＋ Rails 8.1.4.1 ＋ Active Record ＋ Tailwind CSS 4 ＋ Turbo・Stimulus ＋ RSpec
+- Ruby 4.0.10 ＋ Rails 8.1.4.1 ＋ Active Record ＋ Tailwind CSS 4 ＋ Turbo・Stimulus ＋ RSpec
 - 構成は「Rails 標準の MVC ＋ ユースケース」（`app/usecases/`）。TS 版のユースケースと比べやすくしています
 - DB は [abr-batch](https://github.com/yamafifa/abr-batch) の MySQL を共用します（テーブルも abr-batch で作ったもの）
 
@@ -66,7 +66,7 @@ bundle exec brakeman     # セキュリティのチェック
 
 ## 作ってみて分かったこと
 
-- **Ruby 3.3.0 では Rails 8.1 が動かない**：Rails の中の書き方（`*`・`**` をブロックの中でも使う）を、Ruby 3.3.0 が「anonymous rest parameter is also used within block (SyntaxError)」としてエラーにしました。Ruby 3.4.5 にして動きました
+- **Ruby 3.3.0 では Rails 8.1 が動かない**：Rails の中の書き方（`*`・`**` をブロックの中でも使う）を、Ruby 3.3.0 が「anonymous rest parameter is also used within block (SyntaxError)」としてエラーにしました。Ruby 3.4.5 にして動きました（そのあと 4.0.10 に上げても動いています）
 - **`rails new --skip-bundle` にすると、Tailwind CSS・importmap・Turbo・Stimulus の準備もされない**：あとで `bin/rails tailwindcss:install importmap:install turbo:install stimulus:install` を実行しました
 - **複合主キー**：Rails 8 は複合主キーに対応していて、`to_param` は 5 列を `_` でつないだ形（例：`131016_0001001_006_001_`）でした。TS 版で自分で作った形と同じです
 - **LIKE のエスケープは Rails にある**：`sanitize_sql_like` で `%`・`_`・`\` をエスケープできます（TS 版では Prisma に無いので自分で書いた）

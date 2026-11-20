@@ -7,7 +7,7 @@ description: abr-web-rails（住居表示-住居マスターを検索・一覧�
 
 ## 前提
 
-- Ruby 3.4.5（このフォルダだけ。`.ruby-version`）＋ Rails 8.1.4.1 ＋ Active Record（mysql2）＋ Tailwind CSS 4（tailwindcss-rails）＋ importmap・Turbo・Stimulus ＋ RSpec（rspec-rails 8.1.0）
+- Ruby 4.0.10（`.ruby-version`。rbenv の global も 4.0.10）＋ Rails 8.1.4.1 ＋ Active Record（mysql2）＋ Tailwind CSS 4（tailwindcss-rails）＋ importmap・Turbo・Stimulus ＋ RSpec（rspec-rails 8.1.0）
 - gem はプロジェクトの中（`vendor/bundle`）に入れている。コマンドは `bundle exec` か `bin/rails` で実行する
 - DB は **abr-batch の MySQL を共用**（ポート 3307、テーブル `mt_rsdtdsp_rsdt`、1,752,573 件）。development と test は同じ DB
 - 勉強用に、同じものを TS（abr-web-ts）・Laravel でも作る。機能・画面・デザイン・ユースケースの名前（`SearchRsdt`・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt`）をそろえる
@@ -40,7 +40,7 @@ bin/rails runner 'Rails.application.load_tasks; %w[db:drop db:migrate db:schema:
 
 - TS 版（クリーンアーキテクチャ）とは違い、Rails らしさを残すため、入力チェックや検索はモデルに書く
 - 新しいクラスは Zeitwerk（ファイル名からクラスを読み込む仕組み）に合わせる：`app/usecases/search_rsdt.rb` → `SearchRsdt`
-- Ruby 3.4 なので、ブロックの引数に `it` を使っている
+- Ruby 3.4 以降なので、ブロックの引数に `it` を使っている
 
 ### 検索条件を足すとき
 
@@ -96,7 +96,7 @@ kill $(cat tmp/pids/server.pid)   # 止める
 
 | 症状 | 原因と対処 |
 |---|---|
-| `anonymous rest parameter is also used within block (SyntaxError)`（actionview の中） | Ruby 3.3.0 のバグで Rails 8.1 が読み込めない。このフォルダは Ruby 3.4.5 にした |
+| `anonymous rest parameter is also used within block (SyntaxError)`（actionview の中） | Ruby 3.3.0 のバグで Rails 8.1 が読み込めない。このフォルダは Ruby 3.4.5 にし、そのあと 4.0.10 に上げた |
 | `rails new` のあと、Tailwind・importmap・Turbo・Stimulus が無い | `--skip-bundle` を付けると、それらの準備もされない。`bin/rails tailwindcss:install importmap:install turbo:install stimulus:install` を実行した |
 | 日付に「2026-02-30」を入れるとエラーにならず NULL になる／「2026/01/01」が通る | Active Record の日付の型変換は、正しくない値を黙って nil にし、いろいろな書き方を受け付ける。`read_attribute_before_type_cast` で、型変換の前の値を YYYY-MM-DD か検査している |
 | 削除された行の更新が「成功」になる | Active Record の `save` は、0 行の更新でも `true` を返す（試して確かめた）。`UpdateRsdt` は `Rsdt.lock.find_by` で行をロックしてから更新する |
