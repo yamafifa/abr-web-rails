@@ -8,7 +8,7 @@
 # - 小さい仮名（「ヶ」と「ケ」）→ 大きい仮名にする
 # CJK 互換漢字（例：U+FA10 の「塚」）はそのまま残す（MySQL は U+585A の「塚」と別の文字として扱うため）
 #
-# abr-batch の src/lib/fold.ts と同じ処理。直すときは両方を直す
+# abr-batch の src/lib/fold.ts、Laravel 版の App\Support\RsdtFold と同じ処理。直すときはすべてを直す
 module RsdtFold
   # 濁点・半濁点（結合文字 U+3099・U+309A）
   VOICED_MARKS = [ 0x3099, 0x309A ].pack("U*").freeze
