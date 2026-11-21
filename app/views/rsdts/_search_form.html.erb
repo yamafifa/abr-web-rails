@@ -1,7 +1,7 @@
-<%# 検索条件のフォーム。GET で送るので、条件は URL に残る（ページ番号は 1 に戻る） %>
+<%# 検索条件のフォーム。GET で送るので、条件は URL に残る（ページ番号は 1 に戻る）。url を渡すと、その画面に送る（Elasticsearch 検索） %>
 <% input_class = "w-full rounded-lg border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/20" %>
 <% c = query.criteria %>
-<%= form_with url: root_path, method: :get, class: "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-[1fr_1fr_9rem_6rem_6rem_auto_auto] lg:items-end" do %>
+<%= form_with url: local_assigns.fetch(:url, root_path), method: :get, class: "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-[1fr_1fr_9rem_6rem_6rem_auto_auto] lg:items-end" do %>
   <% [["市区町村", :city, c.city, "例：世田谷", ""], ["町字", :town, c.town, "例：上北沢", ""], ["丁目", :chome, c.chome, "例：一丁目", ""],
       ["blk_num", :blk, c.blk_num, "例：6", "font-mono"], ["rsdt_num", :rsdt, c.rsdt_num, "例：1", "font-mono"]].each do |label, name, value, placeholder, label_class| %>
     <label class="block">

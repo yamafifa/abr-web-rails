@@ -15,6 +15,7 @@ TS 版と同じです。
 - **一覧**：主キー順。1 ページ 15 件（30・50・100 件も選べます）。ページャー付き
 - **編集**：主キー以外の 17 列。「更新」を押すと、変わった項目をモーダルで見せてから保存します
 - **削除**：一覧と編集画面から。モーダルで確認してから削除します
+- **Elasticsearch 検索**（Rails 版だけ）：`/es`。条件の意味と画面は DB 検索と同じで、abr-batch の `npm run es:index` で作った Elasticsearch のインデックスから探します。下の「Elasticsearch 検索」を参照
 
 ## 動かし方
 
@@ -32,6 +33,23 @@ bin/rails server                                # http://127.0.0.1:3000
 - 編集・削除したデータは、abr-batch で `npm run import:v3`（約 15 秒）を実行すると元に戻せます
 - **`bin/rails db:migrate` などの DB のタスクは使えません。** DB を abr-batch と共用しているので、[lib/tasks/db_guard.rake](lib/tasks/db_guard.rake) で止めています（`db:drop` で abr の DB が消える、`db:schema:load` でテーブルが空になる、などを防ぐため）
 
+## Elasticsearch 検索
+
+DB 検索（`/`）はそのまま残して、Elasticsearch で探す一覧（`/es`）を別に作りました。上のメニューで切り替えられ、それぞれの画面に「同じ条件で〜検索」のリンクがあります。
+
+- **速さ**（開発モードで画面全体を返すまで、3 回測った値）
+
+| 条件 | DB 検索 | Elasticsearch 検索 |
+|---|---|---|
+| 市区町村「町田」＋町字「木曽」 | 1.42〜1.44 秒 | 0.020〜0.022 秒 |
+| 町字「西」 | 0.52 秒 | 0.023〜0.10 秒 |
+| 条件なし | 0.17〜0.18 秒 | 0.016〜0.021 秒 |
+
+- **中身は `npm run es:index` を実行した時点の DB のコピー**です。画面に作成日時を出しています。この画面から編集・削除すると DB は変わりますが、Elasticsearch は次に `es:index` を実行するまで古いままです。食い違ったときは、DB 検索の画面と見比べてください
+- **ページ送りは「最初へ・前へ・次へ・最後へ」**で、ページ番号はありません。Elasticsearch は、先頭から 10,000 件より先へページ番号で進めないため、主キーの続きから取る方法（search_after）にしました。URL の `after`・`before` は、そのキーの次・手前から 1 ページ分という意味です
+- **文字の扱いは MySQL に合わせています**：MySQL（utf8mb4_unicode_ci）は全角と半角、ひらがなとカタカナ、濁点の有無などを同じ文字として扱います。Elasticsearch でも同じ結果になるよう、入れる側（abr-batch の `src/lib/fold.ts`）と探す側（[app/models/rsdt_fold.rb](app/models/rsdt_fold.rb)）で同じように文字をそろえています。直すときは両方を直します
+- Elasticsearch には gem を使わず、Ruby 標準の Net::HTTP でつなぎます（[app/models/es_client.rb](app/models/es_client.rb)）。接続先は環境変数 `ES_URL`（既定は `http://127.0.0.1:9200`）。接続できないときは、画面にエラーの文を出します
+
 ## 構成
 
 | 場所 | 内容 |
@@ -39,11 +57,16 @@ bin/rails server                                # http://127.0.0.1:3000
 | `app/models/rsdt.rb` | Active Record のモデル。複合主キー、17 列の入力チェック、空文字 → NULL、検索のスコープ、住所の表示 |
 | `app/models/rsdt_search_criteria.rb` | 検索条件（`Data.define`） |
 | `app/models/rsdt_list_query.rb` | 一覧の URL ⇔ 検索条件・件数・ページ |
-| `app/usecases/` | ユースケース：`SearchRsdt`（ページ番号の補正もここ）・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt` |
+| `app/models/rsdt_es_list_query.rb` | Elasticsearch 検索の URL ⇔ 検索条件・件数・after・before・last |
+| `app/models/rsdt_fold.rb` | Elasticsearch で探す前に、文字をそろえる（MySQL と同じ結果にするため） |
+| `app/models/es_client.rb` | Elasticsearch の REST API を呼ぶ |
+| `app/usecases/` | ユースケース：`SearchRsdt`（ページ番号の補正もここ）・`SearchRsdtEs`（Elasticsearch で検索）・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt` |
 | `app/controllers/rsdts_controller.rb` | パラメーターを読む → ユースケースを呼ぶ → 表示・redirect |
+| `app/controllers/es_rsdts_controller.rb` | Elasticsearch 検索の一覧。編集・削除は `rsdts_controller.rb` の画面を使う |
 | `app/controllers/concerns/back_url.rb` | 戻り先のチェック（外のサイトへ飛ばさない） |
 | `app/helpers/pager_helper.rb` | ページャーに出すページ番号 |
-| `app/views/rsdts/` | 一覧・編集・削除ボタン・検索フォーム・ページャー |
+| `app/views/rsdts/` | 一覧・一覧の表・編集・削除ボタン・検索フォーム・ページャー |
+| `app/views/es_rsdts/` | Elasticsearch 検索の一覧・ページ送り |
 | `app/views/shared/` | 確認モーダル・お知らせ |
 | `app/javascript/controllers/` | Stimulus：確認モーダル（`confirm`）、件数を変えたら検索（`auto_submit`）、お知らせを消す（`flash`） |
 | `lib/tasks/db_guard.rake` | DB を作り直すタスクを止める |
@@ -56,12 +79,13 @@ TS 版（クリーンアーキテクチャ）との違い：
 ## テスト
 
 ```bash
-bundle exec rspec        # 70 件、約 17 秒
+bundle exec rspec        # 89 件、約 20 秒
 bundle exec rubocop      # 書き方のチェック
 bundle exec brakeman     # セキュリティのチェック
 ```
 
 - テストは本物の DB を使います。1 件ごとにトランザクションで取り消すので、DB の中身は変わりません
+- Elasticsearch 検索のテストは、本物の Elasticsearch を使います。先に abr-batch で `npm run es:index` を実行しておきます
 - development と test は同じ DB を使います（[config/database.yml](config/database.yml)）
 
 ## 作ってみて分かったこと

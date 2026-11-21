@@ -1,0 +1,20 @@
+<%# ページ送り（search_after）。ページ番号は無く、最初・前・次・最後へ進む。query はページの位置を外した検索条件 %>
+<% base = "grid h-9 min-w-9 place-items-center rounded-lg px-3 text-sm transition" %>
+<% on = "#{base} text-slate-300 hover:bg-white/5" %>
+<% off = "#{base} text-slate-600" %>
+<nav aria-label="ページ送り" class="flex flex-wrap items-center justify-center gap-1">
+  <% if prev_key %>
+    <%= link_to "« 最初へ", es_rsdts_path(query.to_params), class: on %>
+    <%= link_to "‹ 前へ", es_rsdts_path(query.with(before: prev_key).to_params), class: on %>
+  <% else %>
+    <span class="<%= off %>">« 最初へ</span>
+    <span class="<%= off %>">‹ 前へ</span>
+  <% end %>
+  <% if next_key %>
+    <%= link_to "次へ ›", es_rsdts_path(query.with(after: next_key).to_params), class: on %>
+    <%= link_to "最後へ »", es_rsdts_path(query.with(last: true).to_params), class: on %>
+  <% else %>
+    <span class="<%= off %>">次へ ›</span>
+    <span class="<%= off %>">最後へ »</span>
+  <% end %>
+</nav>

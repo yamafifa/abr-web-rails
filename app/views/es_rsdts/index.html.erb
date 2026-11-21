@@ -1,0 +1,46 @@
+<% r = @result %>
+<% to = r.from.zero? ? 0 : r.from + r.rows.size - 1 %>
+<% db_query = RsdtListQuery.new(criteria: @query.criteria, per_page: @query.per_page, page: 1) %>
+<div class="space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-white">住居の検索 <span class="ml-1 align-middle rounded-full bg-amber-400/15 px-2.5 py-0.5 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/40">Elasticsearch</span></h1>
+      <p class="mt-1 text-sm text-slate-400">
+        Elasticsearch のインデックスから検索します。中身は abr-batch の <code class="font-mono text-slate-300">npm run es:index</code> を実行した時点の DB のコピーです。
+        <% if r.built_at %>（作成：<span class="font-mono text-slate-300"><%= r.built_at %></span>）<% end %>
+      </p>
+    </div>
+    <%= link_to "同じ条件で DB 検索 →", root_path(db_query.to_params), class: "text-sm text-cyan-300 hover:underline" %>
+  </div>
+
+  <section class="rounded-2xl border border-white/10 bg-slate-900/50 p-5 shadow-xl shadow-black/20 backdrop-blur">
+    <%= render "rsdts/search_form", query: @query, url: es_rsdts_path %>
+  </section>
+
+  <% if r.error %>
+    <p class="rounded-xl border border-rose-400/40 bg-rose-500/10 px-5 py-4 text-sm text-rose-200"><%= r.error %></p>
+  <% end %>
+
+  <section class="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/50 shadow-xl shadow-black/20 backdrop-blur">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-white/10 px-5 py-3 text-sm">
+      <p class="text-slate-400"><span class="font-mono text-lg font-semibold text-white"><%= number_with_delimiter(r.total) %></span> 件</p>
+      <p class="font-mono text-xs text-slate-500"><%= number_with_delimiter(r.from) %>–<%= number_with_delimiter(to) %> 件目</p>
+    </div>
+
+    <% if r.rows.empty? %>
+      <p class="px-5 py-16 text-center text-slate-500">該当する住居がありません</p>
+    <% else %>
+      <%= render "rsdts/table", rows: r.rows, back: @back %>
+    <% end %>
+
+    <% if r.prev_key || r.next_key %>
+      <div class="border-t border-white/10 px-5 py-4">
+        <%= render "pager", query: @query.first_page, prev_key: r.prev_key, next_key: r.next_key %>
+      </div>
+    <% end %>
+  </section>
+
+  <p class="text-xs text-slate-500">
+    編集・削除は DB に対して行います。Elasticsearch には次に <code class="font-mono">npm run es:index</code> を実行するまで反映されないので、この一覧には古い内容が残ります。
+  </p>
+</div>
