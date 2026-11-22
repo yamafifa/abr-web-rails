@@ -33,7 +33,8 @@ module AbrWebRails
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # 画面やログの時刻は日本時間にする（DB に保存する時刻は UTC のまま）
+    config.time_zone = "Tokyo"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Don't generate system test files.

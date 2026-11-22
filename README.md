@@ -100,3 +100,4 @@ bundle exec brakeman     # セキュリティのチェック
 - **`bin/dev` は foreman を自動で入れようとする**：入っていないと `gem install foreman` を実行します。代わりに、Tailwind のビルドと `bin/rails server` を分けて実行しています（[docs/start-stop.md](docs/start-stop.md)）
 - **項目名**：画面の項目名は CSV の列名のままです（日本語名の公式資料を確かめられていないため）
 - **データの性質**（TS 版と同じ）：丁目は「一丁目」と「３丁目」の書き方が混ざっていて、「3」で「３丁目」は見つかりますが、「三丁目」は見つかりません
+- **時刻は日本時間**：`config/application.rb` に `config.time_zone = "Tokyo"` を書きました（Rails の既定は UTC）。DB の日付の列は DATE 型（時刻を持たない）なので、今は時刻で結果が変わる処理はありません。DB（MySQL）の時刻は UTC のままです

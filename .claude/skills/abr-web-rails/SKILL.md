@@ -12,6 +12,7 @@ description: abr-web-rails（住居表示-住居マスターを検索・一覧�
 - DB は **abr-batch の MySQL を共用**（ポート 3307、テーブル `mt_rsdtdsp_rsdt`、1,752,573 件）。development と test は同じ DB
 - 勉強用に、同じものを TS（abr-web-ts）・Laravel でも作る。機能・画面・デザイン・ユースケースの名前（`SearchRsdt`・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt`）をそろえる
 - サーバーは 3000 番ポート（ほかの版と同じ）。`127.0.0.1` で待ち受ける
+- 時刻は日本時間（`config.time_zone = "Tokyo"`）。DB の時刻は UTC のまま
 
 ## してはいけないこと（DB を共用しているため）
 
