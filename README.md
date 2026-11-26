@@ -1,7 +1,7 @@
 # abr-web-rails
 
 ABR（アドレス・ベース・レジストリ）の住居表示-住居マスター（`mt_rsdtdsp_rsdt`、東京都 1,752,573 件）を検索して、一覧表示・編集・削除する Web アプリの Ruby on Rails 版です。
-[abr-batch](https://github.com/yamafifa/abr-batch) で確かめた「大量のデータを部分一致で探すなら、元の DB ではなく、検索用のデータを作る」の効果を、DB 検索と Elasticsearch 検索の画面で比べられるようにしています。
+[abr-batch](https://github.com/yamafifa/abr-batch) で確かめた「大量のデータを部分一致で探すなら、元の DB ではなく、検索用のデータを作る」という考え方の効果を、DB 検索と Elasticsearch 検索の画面で比べられるようにしています。
 
 - Ruby 4.0.10 ＋ Rails 8.1.4.1 ＋ Active Record ＋ Tailwind CSS 4 ＋ Turbo・Stimulus ＋ RSpec
 - 構成は「Rails 標準の MVC ＋ ユースケース」（`app/usecases/`）
@@ -20,7 +20,7 @@ ABR（アドレス・ベース・レジストリ）の住居表示-住居マス�
 
 - 本番モードは、`RAILS_ENV=production bin/rails assets:precompile` で CSS と JS を作ってから、`RAILS_ENV=production bin/rails server -b 127.0.0.1` で起動しました。`-b 127.0.0.1` が無いと、ほかの PC からも接続できる形（`0.0.0.0`）で待ち受けます。測り終えたら `public/assets` を消して、開発モードに戻します
 - 開発モード（`bin/rails server`）では、Elasticsearch 検索が 0.018〜0.026 秒でした。「町田」＋「木曽」の本番モードの値は、3 回のうち 2 回が 0.03 秒台で、ばらつきました
-- DB 検索は `city LIKE '%町田%'` のような部分一致です。前に `%` が付く LIKE は MySQL のインデックスでは速くならないので、毎回 175 万行を全部読みます
+- DB 検索は `city LIKE '%町田%'` のような部分一致です。前に `%` が付く LIKE は MySQL のインデックスが効かないので、毎回約 175 万行をすべて読みます
 - Elasticsearch 検索は、abr-batch の `npm run es:index` で作った検索用のインデックスから探します。条件の意味と画面は DB 検索と同じです
 - 詳しくは下の「[Elasticsearch 検索](#elasticsearch-検索)」を参照
 
@@ -48,12 +48,12 @@ bin/rails server                                # http://127.0.0.1:3000
 
 ## Elasticsearch 検索
 
-DB 検索（`/`）はそのまま残して、Elasticsearch で探す一覧（`/es`）を別に作りました。上のメニューで切り替えられ、それぞれの画面に「同じ条件で〜検索」のリンクがあります。
+DB 検索（`/`）はそのまま残して、Elasticsearch で探す一覧（`/es`）を別に作りました。上のメニューで切り替えられます。それぞれの画面には、もう一方で同じ条件を検索するリンク（「同じ条件で DB 検索」「同じ条件で Elasticsearch 検索」）があります。
 
-- **中身は `npm run es:index` を実行した時点の DB のコピー**です。画面に作成日時を出しています。この画面から編集・削除すると DB は変わりますが、Elasticsearch は次に `es:index` を実行するまで古いままです。食い違ったときは、DB 検索の画面と見比べてください
-- **ページ送りは「最初へ・前へ・次へ・最後へ」**で、ページ番号はありません。Elasticsearch は、先頭から 10,000 件より先へページ番号で進めないため、主キーの続きから取る方法（search_after）にしました。URL の `after`・`before` は、そのキーの次・手前から 1 ページ分という意味です
-- **文字の扱いは MySQL に合わせています**：MySQL（utf8mb4_unicode_ci）は全角と半角、ひらがなとカタカナ、濁点の有無などを同じ文字として扱います。Elasticsearch でも同じ結果になるよう、入れる側（abr-batch の `src/lib/fold.ts`）と探す側（[app/models/rsdt_fold.rb](app/models/rsdt_fold.rb)）で同じように文字をそろえています。直すときは両方を直します
-- Elasticsearch には gem を使わず、Ruby 標準の Net::HTTP でつなぎます（[app/models/es_client.rb](app/models/es_client.rb)）。接続先は環境変数 `ES_URL`（既定は `http://127.0.0.1:9200`）。接続できないときは、画面にエラーの文を出します
+- **中身は `npm run es:index` を実行した時点の DB のコピー**です。画面に作成日時を出しています。アプリで編集・削除すると DB は変わりますが、Elasticsearch の中身は次に `es:index` を実行するまで古いままです。結果が食い違ったときは、DB 検索の画面と見比べてください
+- **ページ送りは「最初へ・前へ・次へ・最後へ」**で、ページ番号はありません。Elasticsearch は、先頭から 10,000 件より先へページ番号で進めないため、前のページの最後の行の主キーを渡して、その続きから取る方法（search_after）にしました。URL の `after`・`before` は、そのキーの次・手前から 1 ページ分という意味です
+- **文字の扱いは MySQL に合わせています**：MySQL（utf8mb4_unicode_ci）は全角と半角、ひらがなとカタカナ、濁点の有無などを同じ文字として扱います。Elasticsearch でも同じ結果になるよう、入れる側（abr-batch の `src/lib/fold.ts`）と探す側（[app/models/rsdt_fold.rb](app/models/rsdt_fold.rb)）で同じように文字をそろえています。直すときは、abr-batch とほかの版の同じ処理も、あわせて直します
+- Elasticsearch には gem を使わず、Ruby 標準の Net::HTTP でつなぎます（[app/models/es_client.rb](app/models/es_client.rb)）。接続先は環境変数 `ES_URL` です（書かなければ `http://127.0.0.1:9200`）。接続できないときは、画面にエラーメッセージを出します
 
 ## 構成
 

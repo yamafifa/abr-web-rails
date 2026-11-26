@@ -10,7 +10,7 @@ description: abr-web-rails（住居表示-住居マスターを検索・一覧�
 - Ruby 4.0.10（`.ruby-version`。rbenv の global も 4.0.10）＋ Rails 8.1.4.1 ＋ Active Record（mysql2）＋ Tailwind CSS 4（tailwindcss-rails）＋ importmap・Turbo・Stimulus ＋ RSpec（rspec-rails 8.1.0）
 - gem はプロジェクトの中（`vendor/bundle`）に入れている。コマンドは `bundle exec` か `bin/rails` で実行する
 - DB は **abr-batch の MySQL を共用**（ポート 3307、テーブル `mt_rsdtdsp_rsdt`、1,752,573 件）。development と test は同じ DB
-- 勉強用に、同じものを TS（abr-web-ts）・Laravel でも作る。機能・画面・デザイン・ユースケースの名前（`SearchRsdt`・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt`）をそろえる
+- 勉強用に、同じものを TypeScript（abr-web-ts）・Laravel・Symfony・Spring Boot でも作ってある。機能・画面・デザイン・ユースケースの名前（`SearchRsdt`・`GetRsdt`・`UpdateRsdt`・`DeleteRsdt`）をそろえる
 - サーバーは 3000 番ポート（ほかの版と同じ）。`127.0.0.1` で待ち受ける
 - 時刻は日本時間（`config.time_zone = "Tokyo"`）。DB の時刻は UTC のまま
 
@@ -35,6 +35,7 @@ bin/rails runner 'Rails.application.load_tasks; %w[db:drop db:migrate db:schema:
 |---|---|
 | `app/models/rsdt.rb` | 複合主キー、17 列の決まり（`ATTRIBUTE_RULES`）、入力チェック、空文字 → NULL（`normalizes`）、検索（`scope :search`）、住所の表示（`#address`） |
 | `app/models/rsdt_search_criteria.rb`・`rsdt_list_query.rb` | 検索条件と、一覧の URL ⇔ 状態の変換（`Data.define`） |
+| `app/models/rsdt_es_list_query.rb`・`rsdt_fold.rb`・`es_client.rb` | Elasticsearch 検索の URL ⇔ 状態の変換、文字をそろえる処理（abr-batch の `fold.ts` と同じ）、REST API の呼び出し（Net::HTTP） |
 | `app/usecases/` | ユースケース（`#call` を持つクラス）。Active Record のモデルを直接使う（リポジトリのインターフェースは作らない） |
 | `app/controllers/` | パラメーターを読む → ユースケースを呼ぶ → 表示・redirect だけ |
 | `app/views/`・`app/javascript/controllers/` | 画面と Stimulus |
@@ -47,16 +48,17 @@ bin/rails runner 'Rails.application.load_tasks; %w[db:drop db:migrate db:schema:
 
 1. `app/models/rsdt_search_criteria.rb` の項目
 2. `app/models/rsdt.rb` の `scope :search`（部分一致は `sanitize_sql_like` でエスケープ）
-3. `app/models/rsdt_list_query.rb` の `PARAM_NAMES`（URL の名前）と `MAX_LENGTH`
-4. `app/views/rsdts/_search_form.html.erb` の入力欄
-5. テスト（`spec/models/rsdt_spec.rb`・`rsdt_list_query_spec.rb`・`spec/requests/rsdts_spec.rb`）と README
+3. `app/usecases/search_rsdt_es.rb` の `WILDCARD_FIELDS`（部分一致）か `EXACT_FIELDS`（完全一致）
+4. `app/models/rsdt_list_query.rb` の `PARAM_NAMES`（URL の名前）と `MAX_LENGTH`
+5. `app/views/rsdts/_search_form.html.erb` の入力欄
+6. テスト（`spec/models/rsdt_spec.rb`・`rsdt_list_query_spec.rb`・`spec/requests/rsdts_spec.rb`）と README
 
 部分一致か完全一致かは、値を見てから決める（`blk_num`・`rsdt_num` は全件が半角数字なので完全一致）。
 
 ## テストと確認
 
 ```bash
-bundle exec rspec        # 70 件、約 17 秒。本物の DB を使い、1 件ごとにトランザクションで取り消す
+bundle exec rspec        # 89 件、約 20 秒。本物の DB と Elasticsearch を使い、1 件ごとにトランザクションで取り消す
 bundle exec rubocop      # 指摘 0 件を保つ。直すときは bundle exec rubocop -a
 bundle exec brakeman -q  # セキュリティ警告 0 件を保つ
 ```
@@ -130,5 +132,5 @@ kill $(cat tmp/pids/server.pid)   # 止める
 - README は入口（できること・動かし方・構成・テスト・作ってみて分かったこと）。起動と停止は `docs/start-stop.md`
 - 仕様を変えたら、README の「できること」「作ってみて分かったこと」も直す。TS 版とそろえる機能なら、TS 版との違いも書く
 - コミットと push は、ユーザーの了解を取ってから。メッセージは日本語で、最後に `Co-Authored-By` の行を付ける
-- GitHub は非公開リポジトリにする（TS 版と同じ）。abr-batch 側からは触れない
+- GitHub は**公開**リポジトリ（TS 版も公開）。abr-batch 側からは触れない
 - `vendor/bundle`・`log/`・`tmp/`・`config/master.key`・`.env*` は Git に入れない（`.gitignore` 済み）。コミットの前に、個人情報（本名・メールアドレスなど）が入っていないか確かめる
