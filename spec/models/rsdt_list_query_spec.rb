@@ -33,6 +33,20 @@ RSpec.describe RsdtListQuery do
     it "長すぎる入力は切り詰める" do
       expect(parse(blk: "1" * 50).criteria.blk_num.size).to eq 20
     end
+
+    it "半角カナは全角カナにする（濁点・半濁点は 1 文字にまとめる）" do
+      q = parse(city: "ｶﾞｰﾃﾞﾝ", town: "ﾊﾟｰｸ", chome: "ｳﾞ")
+      expect([ q.criteria.city, q.criteria.town, q.criteria.chome ]).to eq %w[ガーデン パーク ヴ]
+    end
+
+    it "半角カナのほかは変えない（全角英数字・丸数字・互換漢字）" do
+      s = "３Ａ①塚ﾊﾟ"
+      expect(parse(town: s).criteria.town).to eq "３Ａ①塚パ"
+    end
+
+    it "半角カナを全角にしてから長さで切る" do
+      expect(parse(chome: "ﾊﾟ" * 20).criteria.chome).to eq "パ" * 20
+    end
   end
 
   describe "#to_params" do

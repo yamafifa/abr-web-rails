@@ -53,6 +53,7 @@ DB 検索（`/`）はそのまま残して、Elasticsearch で探す一覧（`/e
 - **中身は `npm run es:index` を実行した時点の DB のコピー**です。画面に作成日時を出しています。アプリで編集・削除すると DB は変わりますが、Elasticsearch の中身は次に `es:index` を実行するまで古いままです。結果が食い違ったときは、DB 検索の画面と見比べてください
 - **ページ送りは「最初へ・前へ・次へ・最後へ」**で、ページ番号はありません。Elasticsearch は、先頭から 10,000 件より先へページ番号で進めないため、前のページの最後の行の主キーを渡して、その続きから取る方法（search_after）にしました。URL の `after`・`before` は、そのキーの次・手前から 1 ページ分という意味です
 - **文字の扱いは MySQL に合わせています**：MySQL（utf8mb4_unicode_ci）は全角と半角、ひらがなとカタカナ、濁点の有無などを同じ文字として扱います。Elasticsearch でも同じ結果になるよう、入れる側（abr-batch の `src/lib/fold.ts`）と探す側（[app/models/rsdt_fold.rb](app/models/rsdt_fold.rb)）で同じように文字をそろえています。直すときは、abr-batch とほかの版の同じ処理も、あわせて直します
+- **検索条件の半角カナは、受け取るときに全角カナにします**（「ﾊﾟ」→「パ」）。DB 検索と Elasticsearch 検索の両方にかかります。MySQL は半角の「ﾊﾟ」を「ﾊ」と「ﾟ」の 2 文字として探すので、そのままでは Elasticsearch 検索と件数が合わないためです。変えるのは半角カナだけで、互換漢字や丸数字は変えません（[app/models/rsdt_list_query.rb](app/models/rsdt_list_query.rb)）
 - Elasticsearch には gem を使わず、Ruby 標準の Net::HTTP でつなぎます（[app/models/es_client.rb](app/models/es_client.rb)）。接続先は環境変数 `ES_URL` です（書かなければ `http://127.0.0.1:9200`）。接続できないときは、画面にエラーメッセージを出します
 
 ## 構成
@@ -84,7 +85,7 @@ DB 検索（`/`）はそのまま残して、Elasticsearch で探す一覧（`/e
 ## テスト
 
 ```bash
-bundle exec rspec        # 89 件、約 20 秒
+bundle exec rspec        # 92 件、約 20 秒
 bundle exec rubocop      # 書き方のチェック
 bundle exec brakeman     # セキュリティのチェック
 ```
