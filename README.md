@@ -107,3 +107,14 @@ bundle exec brakeman     # セキュリティのチェック
 - **項目名**：画面の項目名は CSV の列名のままです（日本語名の公式資料を確かめられていないため）
 - **データの性質**：丁目は「一丁目」と「３丁目」の書き方が混ざっていて、「3」で「３丁目」は見つかりますが、「三丁目」は見つかりません
 - **時刻は日本時間**：`config/application.rb` に `config.time_zone = "Tokyo"` を書きました（Rails の既定は UTC）。DB の日付の列は DATE 型（時刻を持たない）なので、今は時刻で結果が変わる処理はありません。DB（MySQL）の時刻は UTC のままです
+
+## 出典・ライセンス
+
+このリポジトリのコードは [MIT License](LICENSE) です。
+
+使うデータは次のとおりです。MIT License は、このデータには当てはまりません。
+
+- 出典：「[アドレス・ベース・レジストリ](https://www.digital.go.jp/policies/base_registry_address)」（デジタル庁）
+- 利用規約：[公共データ利用規約（第1.0版）（PDL1.0）](https://www.digital.go.jp/policies/base_registry_address_tos)
+- データそのものはリポジトリに含めていません。DB と Elasticsearch の中身は、[abr-batch](https://github.com/yamafifa/abr-batch) でこのデータを手元で加工して入れたものです
+- README に載せた件数・計測結果・例は、このデータをもとに yamafifa が作成したものです
